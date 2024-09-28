@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-app
+  labels:
+    app: django-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-app
+  template:
+    metadata:
+      labels:
+        app: django-app
+    spec:
+      containers:
+      - name: django-app
+        image: saturnsam/django-on-docker-web:v1.1
+        command: ["gunicorn", "--bind", "0.0.0.0:80", "hello_django.wsgi:application"]
+        # command: ["sleep", "3600"]
+
+        env:
+        - name: DEBUG
+          valueFrom:
+            secretKeyRef:
+              name: django-app-secret
+              key: DEBUG
+
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: django-app-secret
+              key: SECRET_KEY
+
+        - name: DJANGO_ALLOWED_HOSTS
+          valueFrom:
+            secretKeyRef:
+              name: django-app-secret
+              key: DJANGO_ALLOWED_HOSTS
+
+        - name: SQL_ENGINE
+          valueFrom:
+            secretKeyRef:
+              name: django-app-secret
+              key: SQL_ENGINE
+
+        - name: SQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: django-app-secret
+              key: SQL_DATABASE
+
+        - name: SQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: django-app-secret
+              key: SQL_USER
+
+        - name: SQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: django-app-secret
+              key: SQL_PASSWORD
+
+        - name: SQL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: django-app-secret
+              key: SQL_HOST
+
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: django-app-static-volume
+          mountPath: /home/app/web/staticfiles
+        - name: django-app-media-volume
+          mountPath: /home/app/web/mediafiles
+      volumes:
+      - name: django-app-static-volume
+        persistentVolumeClaim:
+          claimName: django-app-static-pvc
+      - name: django-app-media-volume
+        persistentVolumeClaim:
+          claimName: django-app-media-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: django-app
+  type: ClusterIP

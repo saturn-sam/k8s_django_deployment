@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgree
+spec:
+  selector:
+    matchLabels:
+      app: postgree
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgree
+    spec:
+      containers:
+      - image: postgres:15
+        name: postgree
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgre-secret
+              key: POSTGRES_USER
+
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgre-secret
+              key: POSTGRES_PASSWORD
+
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgre-secret
+              key: POSTGRES_DB
+        ports:
+        - containerPort: 3306
+          name: postgree
+        volumeMounts:
+        - name: postgre-persistent-storage
+          mountPath: /var/lib/postgresql/data/
+      volumes:
+      - name: postgre-persistent-storage
+        persistentVolumeClaim:
+          claimName: postgre-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgre-svc
+spec:
+  ports:
+  - port: 5432
+  selector:
+    app: postgree

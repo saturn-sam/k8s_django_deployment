@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-app-nginx
+spec:
+  selector:
+    matchLabels:
+      app: django-app-nginx
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: django-app-nginx
+    spec:
+      containers:
+      - image: saturnsam/django-on-docker-nginx:v1.0
+        name: django-app-nginx
+
+        ports:
+        - containerPort: 80
+          name: django-nginx
+        volumeMounts:
+        - name: django-app-nginx-static-volume
+          mountPath: /home/app/web/staticfiles
+        - name: django-app-nginx-media-volume
+          mountPath: /home/app/web/mediafiles
+      volumes:
+      - name: django-app-nginx-static-volume
+        persistentVolumeClaim:
+          claimName: django-app-static-pvc
+      - name: django-app-nginx-media-volume
+        persistentVolumeClaim:
+          claimName: django-app-media-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-app-nginx-service
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: django-app
+  type: LoadBalancer
