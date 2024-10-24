@@ -14,7 +14,7 @@ spec:
         app: django-app-nginx
     spec:
       containers:
-      - image: saturnsam/django-on-docker-nginx:v1.0
+      - image: saturnsam/django-on-docker-nginx:v2.4
         name: django-app-nginx
 
         ports:
@@ -44,5 +44,7 @@ spec:
     protocol: TCP
     targetPort: 80
   selector:
-    app: django-app
+    app: django-app-nginx
   type: LoadBalancer
+
+
